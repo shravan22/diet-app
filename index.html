@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>My Diet</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Diet">
+<meta name="theme-color" content="#1d5c3a" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1512" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+  :root {
+    --bg: #f4f6f4; --card: #ffffff; --ink: #17251d; --muted: #66756c;
+    --brand: #1d5c3a; --brand-soft: #e3efe7; --accent: #d97e2b;
+    --line: #e2e8e3; --check: #2e8b57; --shadow: 0 1px 3px rgba(20,40,28,.08);
+    --tabbar: rgba(255,255,255,.92);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1512; --card: #1a231d; --ink: #e8efe9; --muted: #93a398;
+      --brand: #6fbf8f; --brand-soft: #22352a; --accent: #e0954e;
+      --line: #2a362e; --check: #6fbf8f; --shadow: none;
+      --tabbar: rgba(20,28,23,.94);
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--ink);
+    padding-bottom: calc(84px + env(safe-area-inset-bottom));
+    min-height: 100vh;
+  }
+  header {
+    background: var(--brand); color: #fff;
+    padding: calc(14px + env(safe-area-inset-top)) 18px 14px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  @media (prefers-color-scheme: dark) { header { background: #16281e; color: #dcebe0; } }
+  header h1 { font-size: 19px; font-weight: 700; letter-spacing: .2px; }
+  header .sub { font-size: 12.5px; opacity: .82; margin-top: 2px; }
+  main { padding: 14px 14px 8px; max-width: 560px; margin: 0 auto; }
+
+  /* ---- Today ring ---- */
+  .ringcard {
+    background: var(--card); border-radius: 18px; box-shadow: var(--shadow);
+    padding: 16px; display: flex; align-items: center; gap: 16px; margin-bottom: 14px;
+    border: 1px solid var(--line);
+  }
+  .ring { width: 92px; height: 92px; flex: none; position: relative; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring .num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring .num b { font-size: 19px; }
+  .ring .num span { font-size: 10px; color: var(--muted); }
+  .ringinfo { flex: 1; }
+  .ringinfo h2 { font-size: 16px; margin-bottom: 3px; }
+  .ringinfo p { font-size: 13px; color: var(--muted); line-height: 1.45; }
+  .ringinfo .prot { margin-top: 6px; font-size: 12.5px; color: var(--brand); font-weight: 600; }
+
+  /* ---- Meal cards ---- */
+  .meal {
+    background: var(--card); border-radius: 16px; border: 1px solid var(--line);
+    box-shadow: var(--shadow); margin-bottom: 12px; overflow: hidden;
+    transition: opacity .2s;
+  }
+  .meal.done { opacity: .62; }
+  .mealhead {
+    display: flex; align-items: center; gap: 12px; padding: 13px 14px;
+    cursor: pointer; user-select: none; -webkit-user-select: none;
+  }
+  .mealhead .tick {
+    width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line);
+    flex: none; display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: transparent; transition: all .15s;
+  }
+  .meal.done .mealhead .tick { background: var(--check); border-color: var(--check); color: #fff; }
+  .mealhead .mtitle { flex: 1; }
+  .mealhead .mtitle b { font-size: 15px; display: block; }
+  .meal.done .mealhead .mtitle b { text-decoration: line-through; }
+  .mealhead .mtitle span { font-size: 12px; color: var(--muted); }
+  .mealhead .kcal { font-size: 13px; font-weight: 700; color: var(--accent); flex: none; }
+  .items { border-top: 1px solid var(--line); padding: 8px 14px 11px 52px; }
+  .items li {
+    list-style: none; font-size: 13.5px; padding: 4px 0; color: var(--ink);
+    display: flex; justify-content: space-between; gap: 10px;
+  }
+  .items li em { color: var(--muted); font-style: normal; font-size: 12px; flex: none; }
+  .rest {
+    background: var(--brand-soft); border-radius: 16px; padding: 22px 18px; text-align: center;
+    border: 1px solid var(--line);
+  }
+  .rest .big { font-size: 34px; }
+  .rest h2 { font-size: 17px; margin: 8px 0 6px; color: var(--brand); }
+  .rest p { font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+
+  /* ---- Day chips (Week view) ---- */
+  .chips { display: flex; gap: 7px; overflow-x: auto; padding: 2px 0 12px; -webkit-overflow-scrolling: touch; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none; padding: 8px 15px; border-radius: 20px; font-size: 13.5px; font-weight: 600;
+    background: var(--card); border: 1px solid var(--line); color: var(--ink); cursor: pointer;
+  }
+  .chip.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .daytotal { font-size: 13px; color: var(--muted); margin: 2px 2px 12px; }
+
+  /* ---- Shopping ---- */
+  .shopnote { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; padding: 0 2px; }
+  .cat { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--brand); margin: 18px 2px 8px; }
+  .shoprow {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    display: flex; align-items: center; gap: 11px; padding: 11px 12px; margin-bottom: 8px;
+  }
+  .shoprow.have { opacity: .5; }
+  .shoprow .box {
+    width: 23px; height: 23px; border-radius: 7px; border: 2px solid var(--line); flex: none;
+    display: flex; align-items: center; justify-content: center; color: transparent; font-size: 13px; cursor: pointer;
+  }
+  .shoprow.have .box { background: var(--check); border-color: var(--check); color: #fff; }
+  .shoprow .sname { flex: 1; cursor: pointer; }
+  .shoprow .sname b { font-size: 14.5px; display: block; font-weight: 600; }
+  .shoprow.have .sname b { text-decoration: line-through; }
+  .shoprow .sname span { font-size: 12px; color: var(--muted); }
+  .shoprow a.buy {
+    flex: none; text-decoration: none; font-size: 12.5px; font-weight: 700;
+    background: var(--brand-soft); color: var(--brand); padding: 8px 12px; border-radius: 10px;
+  }
+  .toolbar { display: flex; gap: 9px; margin-bottom: 4px; }
+  .toolbar button {
+    flex: 1; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    font-size: 13.5px; font-weight: 600; padding: 11px; border-radius: 12px; cursor: pointer;
+    font-family: inherit;
+  }
+  .toolbar button.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+  /* ---- Tab bar ---- */
+  nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+    background: var(--tabbar); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line);
+    display: flex; padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav button {
+    flex: 1; background: none; border: none; padding: 9px 0 8px; cursor: pointer;
+    color: var(--muted); font-family: inherit; font-size: 10.5px; font-weight: 600;
+  }
+  nav button .ico { display: block; font-size: 21px; margin-bottom: 2px; }
+  nav button.on { color: var(--brand); }
+  .disclaimer { font-size: 11px; color: var(--muted); text-align: center; margin: 18px 8px 8px; line-height: 1.5; }
+  .view { display: none; } .view.on { display: block; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="hTitle">My Diet</h1>
+  <div class="sub" id="hSub"></div>
+</header>
+<main>
+  <section id="viewToday" class="view on"></section>
+  <section id="viewWeek" class="view"></section>
+  <section id="viewShop" class="view"></section>
+</main>
+<nav>
+  <button id="tabToday" class="on" onclick="setTab('Today')"><span class="ico">🍽️</span>Today</button>
+  <button id="tabWeek" onclick="setTab('Week')"><span class="ico">📅</span>Week</button>
+  <button id="tabShop" onclick="setTab('Shop')"><span class="ico">🛒</span>Shopping</button>
+</nav>
+
+<script>
+// ============ DIET PLAN DATA (transcribed from nutritionist plan, July 2026) ============
+// k = estimated kcal, p = estimated protein (g). Estimates only — not from the nutritionist.
+const PLAN = {
+  1: { name: "Monday", meals: [
+    { t: "Breakfast", items: [
+      ["2 boiled eggs", 140, 12], ["1 slice gluten-free bread", 80, 2],
+      ["1/3 avocado (50 g)", 80, 1], ["5 strawberries (75 g)", 25, 0],
+      ["Chamomile tea (1 cup)", 0, 0] ]},
+    { t: "Morning Snack", items: [
+      ["6 strawberries (90 g)", 30, 0], ["1/2 cup plain Greek yogurt (120 g)", 75, 12],
+      ["1 tbsp flaxseed (10 g)", 55, 2], ["10 almonds (12 g)", 70, 3] ]},
+    { t: "Lunch", items: [
+      ["Grilled chicken breast (140 g)", 230, 43], ["Brown rice 1/3 cup (50 g cooked)", 55, 1],
+      ["Spinach salad w/ shredded carrots (1/2 cup) & purple cabbage (1/2 cup)", 40, 2],
+      ["Mango 1/2 cup (80 g)", 50, 0], ["Sugar-free flavored water", 0, 0] ]},
+    { t: "Afternoon Snack", items: [ ["10 almonds (12 g)", 70, 3] ]},
+    { t: "Dinner", items: [
+      ["Sandwich: 1 slice Ezekiel bread (45 g)", 80, 4], ["Cheese (50 g)", 190, 12],
+      ["Spinach 1 cup (30 g)", 7, 1], ["Shredded carrots 1/4 cup (25 g)", 10, 0],
+      ["Spearmint tea (1 cup)", 0, 0] ]}
+  ]},
+  2: { name: "Tuesday", meals: [
+    { t: "Breakfast", items: [
+      ["Chicken wrap (60 g cooked chicken) w/ spinach, cabbage & shredded carrots (1/4 cup)", 230, 22],
+      ["10 almonds (12 g)", 70, 3], ["Mixed berries 1 cup (150 g) — blueberries, blackberries, strawberries", 85, 1],
+      ["Tea (1 cup)", 0, 0] ]},
+    { t: "Morning Snack", items: [ ["8 walnut halves (28 g)", 185, 4] ]},
+    { t: "Lunch", items: [
+      ["Tuna ceviche 3/4 cup (150 g)", 150, 30], ["Lettuce 1 cup (30 g)", 5, 0],
+      ["Cucumber 1/2 (100 g)", 15, 1], ["Shredded carrots 1/4 cup (25 g) with lemon", 10, 0],
+      ["Saltine crackers 2 packs (20 g)", 85, 2], ["Flavored water (1 cup)", 0, 0] ]},
+    { t: "Afternoon Snack", items: [
+      ["Shredded carrots 1 cup (80 g)", 35, 1], ["10 almonds (12 g)", 70, 3] ]},
+    { t: "Dinner", items: [
+      ["1 seeded bread slice (45 g)", 120, 4], ["1/3 avocado (50 g)", 80, 1],
+      ["Ground turkey (50 g)", 85, 12], ["Grilled cheese (50 g)", 190, 12],
+      ["Water (1 cup)", 0, 0] ]}
+  ]},
+  3: { name: "Wednesday", meals: [
+    { t: "Breakfast", items: [
+      ["Omelet of 4 egg whites", 70, 14], ["Oaxaca or feta cheese 1/4 cup (30 g)", 100, 6],
+      ["Mushrooms 1/2 cup (70 g)", 10, 1], ["1 slice gluten-free bread (40 g)", 80, 2],
+      ["Tea (1 cup)", 0, 0] ]},
+    { t: "Morning Snack", items: [
+      ["Rice or quinoa cakes, 2 pieces (20 g each)", 70, 2], ["Peanut butter 1 tbsp (15 g)", 95, 4] ]},
+    { t: "Lunch", items: [
+      ["Chicken salad (140 g chicken)", 230, 43], ["Mixed vegetables 1 cup", 40, 2],
+      ["Cooked rice 1/2 cup (100 g)", 130, 3], ["Cooked potato 1/2 cup (100 g)", 85, 2],
+      ["Mayonnaise 1/2 tbsp (7 g)", 50, 0], ["Saltine crackers 1 pack (10 g)", 43, 1],
+      ["Flavored water (1 cup)", 0, 0] ]},
+    { t: "Afternoon Snack", items: [ ["10 almonds (12 g)", 70, 3] ]},
+    { t: "Dinner", items: [
+      ["Grilled chicken (90 g)", 150, 28], ["1/2 avocado (70 g)", 115, 1],
+      ["Cooked broccoli 1/2 cup (70 g)", 25, 2], ["Cooked carrots 1/2 cup (70 g)", 25, 1],
+      ["Water (1 cup)", 0, 0] ]}
+  ]},
+  4: { name: "Thursday", meals: [
+    { t: "Breakfast", note: "Whole wheat lavash wrap", items: [
+      ["Whole wheat lavash, 1 piece (90 cal)", 90, 3], ["Egg whites, 2 (60 g)", 35, 7],
+      ["Spinach 1 cup (30 g)", 7, 1], ["Feta cheese 1 tbsp (10 g)", 25, 2],
+      ["Regular cheese 1 tbsp (10 g)", 40, 2], ["Coffee w/ 1–2 tbsp monk fruit sweetener", 5, 0] ]},
+    { t: "Morning Snack", items: [
+      ["1 apple (150 g)", 80, 0], ["15 almonds (18 g)", 105, 4] ]},
+    { t: "Lunch", items: [
+      ["Grilled fish (140 g)", 170, 30], ["Gluten-free spaghetti 1/2 cup (80 g cooked)", 120, 2],
+      ["Mixed vegetables 1 cup (100 g)", 40, 2], ["Flavored water (1 cup)", 0, 0] ]},
+    { t: "Afternoon Snack", items: [
+      ["Shredded carrots 1 cup (80 g)", 35, 1], ["8 walnut halves (28 g)", 185, 4] ]},
+    { t: "Dinner", items: [
+      ["2 quesadillas w/ Oaxaca or mozzarella cheese (60 g cheese total)", 430, 20],
+      ["1/3 avocado (50 g)", 80, 1], ["Spinach 1/2 cup (30 g)", 4, 0],
+      ["Water (1 cup)", 0, 0] ]}
+  ]},
+  5: { name: "Friday", meals: [
+    { t: "Breakfast", items: [
+      ["Scrambled egg whites, 3 (90 g)", 50, 11], ["Spinach 1 cup (30 g)", 7, 1],
+      ["1/3 avocado (50 g)", 80, 1], ["5 strawberries (75 g)", 25, 0],
+      ["Water (1 cup)", 0, 0] ]},
+    { t: "Morning Snack", items: [ ["15 almonds (18 g)", 105, 4] ]},
+    { t: "Lunch", items: [
+      ["Skinless cooked chicken (140 g)", 230, 43],
+      ["Vegetables 1 cup (zucchini, carrots, cabbage, broccoli)", 40, 2],
+      ["Flavored water (1 cup)", 0, 0] ]},
+    { t: "Afternoon Snack", items: [
+      ["Rice cakes, 2 pieces (20 g each)", 70, 2], ["1/3 avocado (50 g)", 80, 1] ]},
+    { t: "Dinner", items: [
+      ["Spinach 1 cup (30 g)", 7, 1], ["Sautéed zucchini & carrots 1 cup (100 g)", 60, 2],
+      ["Grilled steak (100 g)", 220, 26], ["Water (1 cup)", 0, 0] ]}
+  ]},
+  6: { name: "Saturday", meals: [
+    { t: "Breakfast", note: "Bulgur upma breakfast", items: [
+      ["Bulgur upma 1/2 cup cooked (100 g) w/ spinach & mixed vegetables (peas, carrots, onion)", 120, 3],
+      ["2 boiled eggs", 140, 12], ["1/2 avocado (70 g)", 115, 1],
+      ["Coffee w/ 1–2 tbsp monk fruit sweetener", 5, 0] ]},
+    { t: "Morning Snack", items: [
+      ["Cucumber with lemon, 1 cup (100 g)", 15, 1], ["10 almonds (12 g)", 70, 3] ]},
+    { t: "Lunch", items: [
+      ["Indian meal, portion 1 cup or 200 g", 300, 12], ["Sugar-free flavored water (1 cup)", 0, 0] ]},
+    { t: "Afternoon Snack", items: [
+      ["10 grapes (70 g)", 48, 0], ["10 almonds (12 g)", 70, 3] ]},
+    { t: "Dinner", items: [
+      ["2 chicken tacos with spinach", 340, 24], ["1/3 avocado (50 g)", 80, 1],
+      ["Tea (1 cup)", 0, 0] ]}
+  ]},
+  0: { name: "Sunday", rest: true }
+};
+
+// ============ SHOPPING LIST (whole week, aggregated) ============
+const SHOP = [
+  { cat: "Produce", items: [
+    ["Avocados", "~4 for the week", "avocados"],
+    ["Strawberries", "1 lb", "fresh strawberries"],
+    ["Blueberries & blackberries", "1 cup mixed (Tue)", "blueberries blackberries fresh"],
+    ["Baby spinach", "1 large box — used almost daily", "baby spinach"],
+    ["Shredded carrots", "2 bags", "shredded carrots bag"],
+    ["Purple cabbage", "1 small head", "purple red cabbage"],
+    ["Lettuce", "1 head", "lettuce head"],
+    ["Cucumbers", "2", "cucumbers"],
+    ["Mushrooms", "small pack (Wed)", "fresh mushrooms"],
+    ["Mango", "1", "mango fresh"],
+    ["Apple", "1 (Thu)", "apples fresh"],
+    ["Grapes", "small bunch (Sat)", "grapes fresh"],
+    ["Zucchini", "2", "zucchini"],
+    ["Broccoli", "1 head", "broccoli"],
+    ["Frozen mixed vegetables", "1 bag (lunches)", "frozen mixed vegetables"],
+    ["Green peas & onion", "for Saturday upma", "green peas onion"],
+    ["Lemons", "2", "lemons"],
+    ["Potato", "1 (Wed)", "russet potato"] ]},
+  { cat: "Protein & Dairy", items: [
+    ["Chicken breast", "~2 lb (used 5 days)", "chicken breast boneless skinless"],
+    ["Ground turkey", "small pack (Tue dinner)", "ground turkey"],
+    ["Steak", "small cut ~100 g (Fri dinner)", "sirloin steak"],
+    ["White fish fillet", "~140 g (Thu lunch)", "fresh fish fillet"],
+    ["Tuna for ceviche", "~150 g (Tue lunch)", "ahi tuna steak"],
+    ["Eggs", "1.5 dozen (whole + whites)", "large eggs 18 count"],
+    ["Plain Greek yogurt", "small tub", "plain greek yogurt"],
+    ["Oaxaca or mozzarella cheese", "1 block", "oaxaca mozzarella cheese"],
+    ["Feta cheese", "small pack", "feta cheese"],
+    ["Sliced cheese", "for sandwich & grilled cheese", "sliced cheese"] ]},
+  { cat: "Bread & Grains", items: [
+    ["Gluten-free bread", "1 loaf", "gluten free bread"],
+    ["Ezekiel bread", "1 loaf (Mon dinner)", "ezekiel bread"],
+    ["Seeded bread", "1 loaf (Tue dinner)", "seeded whole grain bread"],
+    ["Whole wheat lavash", "1 pack (Thu)", "whole wheat lavash wrap"],
+    ["Corn tortillas", "for tacos & quesadillas", "corn tortillas"],
+    ["Bulgur wheat", "1 bag (Sat upma)", "bulgur wheat"],
+    ["Brown rice", "1 bag", "brown rice"],
+    ["Rice or quinoa cakes", "1 pack", "rice cakes"],
+    ["Gluten-free spaghetti", "1 box (Thu)", "gluten free spaghetti"],
+    ["Saltine crackers", "1 box", "saltine crackers"] ]},
+  { cat: "Pantry & Drinks", items: [
+    ["Almonds", "1 lb bag — daily snack", "raw almonds"],
+    ["Walnuts", "small bag", "walnut halves"],
+    ["Ground flaxseed", "small bag", "ground flaxseed"],
+    ["Peanut butter", "1 jar", "natural peanut butter"],
+    ["Mayonnaise", "1 jar", "mayonnaise"],
+    ["Monk fruit sweetener", "1 pack", "monk fruit sweetener"],
+    ["Chamomile & spearmint tea", "1 box each", "chamomile spearmint tea"],
+    ["Coffee", "as needed", "ground coffee"],
+    ["Sugar-free flavored water", "1 case", "sugar free flavored water"] ]}
+];
+
+// ============ STATE ============
+const $ = id => document.getElementById(id);
+const todayKey = () => { const d = new Date(); return "check:" + d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate(); };
+const getChecks = () => { try { return JSON.parse(localStorage.getItem(todayKey())) || []; } catch(e){ return []; } };
+const setChecks = a => localStorage.setItem(todayKey(), JSON.stringify(a));
+const getHave = () => { try { return JSON.parse(localStorage.getItem("have")) || []; } catch(e){ return []; } };
+const setHave = a => localStorage.setItem("have", JSON.stringify(a));
+
+const mealKcal = m => m.items.reduce((s,i)=>s+i[1],0);
+const mealProt = m => m.items.reduce((s,i)=>s+i[2],0);
+const dayKcal = d => d.meals ? d.meals.reduce((s,m)=>s+mealKcal(m),0) : 0;
+const dayProt = d => d.meals ? d.meals.reduce((s,m)=>s+mealProt(m),0) : 0;
+
+// ============ TODAY VIEW ============
+function renderToday() {
+  const dow = new Date().getDay();
+  const day = PLAN[dow];
+  const el = $("viewToday");
+  $("hSub").textContent = new Date().toLocaleDateString(undefined, { weekday:"long", month:"long", day:"numeric" });
+
+  if (day.rest) {
+    el.innerHTML = '<div class="rest"><div class="big">💚</div><h2>Rest Day — Hydration & Wholesome Foods</h2>' +
+      '<p>You may repeat any of the week’s meals or choose light, balanced options with similar portions. ' +
+      'Drink enough water throughout the day.</p></div>' +
+      '<p class="disclaimer">Calorie & protein figures in this app are estimates, not from your nutritionist.</p>';
+    return;
+  }
+
+  const checks = getChecks();
+  const target = dayKcal(day), targetP = dayProt(day);
+  let eaten = 0, eatenP = 0;
+  day.meals.forEach((m,i)=>{ if (checks.includes(i)) { eaten += mealKcal(m); eatenP += mealProt(m); } });
+  const pct = Math.min(1, target ? eaten/target : 0);
+  const C = 2 * Math.PI * 40;
+
+  let html =
+    '<div class="ringcard"><div class="ring">' +
+    '<svg width="92" height="92" viewBox="0 0 92 92">' +
+    '<circle cx="46" cy="46" r="40" fill="none" stroke="var(--line)" stroke-width="9"/>' +
+    '<circle cx="46" cy="46" r="40" fill="none" stroke="var(--brand)" stroke-width="9" stroke-linecap="round" ' +
+    'stroke-dasharray="' + C + '" stroke-dashoffset="' + (C * (1-pct)) + '"/></svg>' +
+    '<div class="num"><b>' + eaten + '</b><span>of ~' + target + ' kcal</span></div></div>' +
+    '<div class="ringinfo"><h2>' + day.name + '</h2>' +
+    '<p>' + checks.length + ' of ' + day.meals.length + ' meals eaten. Tap a meal to check it off as you go.</p>' +
+    '<div class="prot">Protein: ' + eatenP + ' g of ~' + targetP + ' g</div></div></div>';
+
+  day.meals.forEach((m, i) => {
+    const done = checks.includes(i);
+    html += '<div class="meal' + (done ? " done" : "") + '">' +
+      '<div class="mealhead" onclick="toggleMeal(' + i + ')">' +
+      '<div class="tick">✓</div><div class="mtitle"><b>' + m.t + '</b>' +
+      '<span>' + (m.note ? m.note + " · " : "") + '~' + mealKcal(m) + ' kcal · ' + mealProt(m) + ' g protein</span></div>' +
+      '<div class="kcal">' + mealKcal(m) + '</div></div>' +
+      '<ul class="items">' + m.items.map(it =>
+        '<li>' + it[0] + '<em>' + (it[1] ? "~" + it[1] + " kcal" : "") + '</em></li>').join("") +
+      '</ul></div>';
+  });
+  html += '<p class="disclaimer">Calorie & protein figures are estimates for guidance only — the plan itself comes from your nutritionist. Drink water throughout the day and combine with regular physical activity.</p>';
+  el.innerHTML = html;
+}
+function toggleMeal(i) {
+  let c = getChecks();
+  c = c.includes(i) ? c.filter(x=>x!==i) : c.concat([i]);
+  setChecks(c); renderToday();
+}
+
+// ============ WEEK VIEW ============
+let weekDay = new Date().getDay();
+function renderWeek() {
+  const el = $("viewWeek");
+  const order = [1,2,3,4,5,6,0];
+  let html = '<div class="chips">' + order.map(d =>
+    '<button class="chip' + (d===weekDay ? " on" : "") + '" onclick="pickDay(' + d + ')">' +
+    PLAN[d].name.slice(0,3) + '</button>').join("") + '</div>';
+
+  const day = PLAN[weekDay];
+  if (day.rest) {
+    html += '<div class="rest"><div class="big">💚</div><h2>Rest Day</h2>' +
+      '<p>Focus on hydration and wholesome foods. Repeat any of the week’s meals or choose light, balanced options with similar portions.</p></div>';
+  } else {
+    html += '<div class="daytotal">' + day.name + ' · ~' + dayKcal(day) + ' kcal · ~' + dayProt(day) + ' g protein (est.)</div>';
+    day.meals.forEach(m => {
+      html += '<div class="meal"><div class="mealhead" style="cursor:default">' +
+        '<div class="mtitle"><b>' + m.t + '</b><span>' + (m.note ? m.note + " · " : "") +
+        '~' + mealKcal(m) + ' kcal · ' + mealProt(m) + ' g protein</span></div>' +
+        '<div class="kcal">' + mealKcal(m) + '</div></div>' +
+        '<ul class="items">' + m.items.map(it =>
+          '<li>' + it[0] + '<em>' + (it[1] ? "~" + it[1] + " kcal" : "") + '</em></li>').join("") +
+        '</ul></div>';
+    });
+  }
+  el.innerHTML = html;
+}
+function pickDay(d){ weekDay = d; renderWeek(); }
+
+// ============ SHOPPING VIEW ============
+function renderShop() {
+  const el = $("viewShop");
+  const have = getHave();
+  let html = '<p class="shopnote">Everything the week’s plan needs, in one list. Check off what you already have, ' +
+    'then tap <b>Fresh</b> on each item — it opens Amazon Fresh search so you can add it to your cart in one tap.</p>' +
+    '<div class="toolbar"><button class="primary" onclick="copyList()">📋 Copy list</button>' +
+    '<button onclick="resetHave()">↺ Reset checks</button></div>';
+  SHOP.forEach((sec, si) => {
+    html += '<div class="cat">' + sec.cat + '</div>';
+    sec.items.forEach((it, ii) => {
+      const id = si + ":" + ii;
+      const h = have.includes(id);
+      html += '<div class="shoprow' + (h ? " have" : "") + '">' +
+        '<div class="box" onclick="toggleHave(\'' + id + '\')">✓</div>' +
+        '<div class="sname" onclick="toggleHave(\'' + id + '\')"><b>' + it[0] + '</b><span>' + it[1] + '</span></div>' +
+        '<a class="buy" target="_blank" rel="noopener" href="https://www.amazon.com/s?k=' +
+        encodeURIComponent(it[2]) + '&i=amazonfresh">Fresh ›</a></div>';
+    });
+  });
+  html += '<p class="disclaimer">Links open Amazon Fresh search — you pick the brand/size and check out yourself in the Amazon app.</p>';
+  el.innerHTML = html;
+}
+function toggleHave(id) {
+  let h = getHave();
+  h = h.includes(id) ? h.filter(x=>x!==id) : h.concat([id]);
+  setHave(h); renderShop();
+}
+function resetHave(){ setHave([]); renderShop(); }
+function copyList() {
+  const have = getHave();
+  let out = "Grocery list — weekly diet plan\n";
+  SHOP.forEach((sec, si) => {
+    const need = sec.items.filter((it,ii)=>!have.includes(si+":"+ii));
+    if (!need.length) return;
+    out += "\n" + sec.cat.toUpperCase() + "\n";
+    need.forEach(it => out += "• " + it[0] + " — " + it[1] + "\n");
+  });
+  navigator.clipboard.writeText(out).then(
+    () => alert("List copied — paste it anywhere (Notes, Alexa app, messages)."),
+    () => alert("Couldn't copy automatically. Long-press to select instead."));
+}
+
+// ============ TABS & INIT ============
+function setTab(t) {
+  ["Today","Week","Shop"].forEach(x => {
+    $("view"+x).classList.toggle("on", x===t);
+    $("tab"+x).classList.toggle("on", x===t);
+  });
+  $("hTitle").textContent = t==="Shop" ? "Shopping List" : t==="Week" ? "Weekly Plan" : "My Diet";
+  $("hSub").textContent = t==="Today"
+    ? new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})
+    : t==="Week" ? "Full nutrition plan, Monday to Sunday" : "One tap to Amazon Fresh";
+  if (t==="Today") renderToday();
+  if (t==="Week") renderWeek();
+  if (t==="Shop") renderShop();
+}
+
+renderToday(); renderWeek(); renderShop();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
